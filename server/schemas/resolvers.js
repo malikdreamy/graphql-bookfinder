@@ -4,10 +4,12 @@ const { signToken } = require('../utils/auth');
 
 const resolvers = {
   Query: {
-    async me(_, { ID }) {
-      return await User.findById(ID);
+    async me(_, __, context) {
+      if (context.user) {
+        return await User.findById(context.user._id);
+      }
+      throw new AuthenticationError('You need to be logged in!');
     },
- 
   },
 
   Mutation: {
@@ -41,7 +43,7 @@ const resolvers = {
     async saveBook(_, { author, title, bookId, image, link }, context) {
       if (context.user) {
         const user = await User.findOneAndUpdate(
-          { _id: context.user._id },
+          { _id: context.user._id }, // Corrected line
           { $push: { savedBooks: { author, title, bookId, image, link } } },
           { new: true }
         );
@@ -50,6 +52,7 @@ const resolvers = {
         throw new AuthenticationError('You need to be logged in!');
       }
     },
+    
     async removeBook(_, { bookId }, context) {
       if (context.user) {
         const user = await User.findOneAndUpdate(
